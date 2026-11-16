@@ -5,6 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -23,6 +26,15 @@ jobs:
         run: |
           unzip -q SoundTrigger-Android-Project.zip
           ls -la SoundTrigger
+
+      - name: Publish extracted source branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch --orphan source-snapshot
+          git add SoundTrigger/
+          git commit -m "Publish extracted Android source snapshot"
+          git push --force origin source-snapshot
 
       - name: Upload extracted source
         uses: actions/upload-artifact@v4
