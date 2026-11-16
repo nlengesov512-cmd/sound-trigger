@@ -24,6 +24,13 @@ jobs:
           unzip -q SoundTrigger-Android-Project.zip
           ls -la SoundTrigger
 
+      - name: Upload extracted source
+        uses: actions/upload-artifact@v4
+        with:
+          name: SoundTrigger-Source-Snapshot
+          path: SoundTrigger/
+          if-no-files-found: error
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
