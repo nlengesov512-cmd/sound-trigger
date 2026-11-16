@@ -6,12 +6,11 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -22,70 +21,10 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Extract project
-        run: |
-          unzip -q SoundTrigger-Android-Project.zip
-          ls -la SoundTrigger
-
-      - name: Publish extracted source branch
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git switch --orphan source-snapshot
-          git add SoundTrigger/
-          git commit -m "Publish extracted Android source snapshot"
-          git push --force origin source-snapshot
-
-      - name: Upload extracted source
-        uses: actions/upload-artifact@v4
-        with:
-          name: SoundTrigger-Source-Snapshot
-          path: SoundTrigger/
-          if-no-files-found: error
-
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-
-      - name: Fix JVM targets
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          p = Path("SoundTrigger/app/build.gradle.kts")
-          s = p.read_text()
-
-          start = s.index("android {")
-          depth = 0
-          end = None
-
-          for i in range(start, len(s)):
-              if s[i] == "{":
-                  depth += 1
-              elif s[i] == "}":
-                  depth -= 1
-                  if depth == 0:
-                      end = i
-                      break
-
-          if end is None:
-              raise Exception("Не найден конец блока android")
-
-          addition = """
-              compileOptions {
-                  sourceCompatibility = JavaVersion.VERSION_17
-                  targetCompatibility = JavaVersion.VERSION_17
-              }
-
-              kotlinOptions {
-                  jvmTarget = "17"
-              }
-          """
-
-          s = s[:end] + addition + s[end:]
-          p.write_text(s)
-          PY
 
       - name: Build APK
         run: |
@@ -97,3 +36,4 @@ jobs:
         with:
           name: SoundTrigger-APK
           path: SoundTrigger/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
